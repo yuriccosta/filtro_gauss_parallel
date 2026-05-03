@@ -25,8 +25,7 @@ gcc -Wall -O3 -fopenmp filtro_gauss.c -o exe_serial -lm
 gcc -Wall -O3 -fopenmp filtro_gauss_parallel.c -o exe_paralelo -lm
 
 CSV_FILE="resultados.csv"
-
-# Verifica se o arquivo NÃO existe (! -f). 
+ 
 if [ ! -f "$CSV_FILE" ]; then
     echo "Resolucao,Kernel,Iteracoes,Threads,Tempo" > $CSV_FILE
     echo "Novo arquivo '$CSV_FILE' criado."
@@ -81,7 +80,7 @@ for RES in "${RESOLUCOES[@]}"; do
         
         if [ "$ERROS" -eq "0" ]; then
             echo -e "${GREEN}OK (Correto!)${NC}"
-            rm -f $NOME_DIFF # Apaga o arquivo de diff se deu sucesso para economizar espaço
+            rm -f $NOME_DIFF
         else
             echo -e "${RED}ERRO ($ERROS pixels divergem)${NC}"
             echo -e "   -> Veja o mapa de erros em: ${YELLOW}$NOME_DIFF${NC}"
