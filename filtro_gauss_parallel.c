@@ -162,7 +162,7 @@ void apply_convolution(double **image, int image_size_h, int image_size_w, doubl
     int padded_h = image_size_h + 2 * pad_h;
     int padded_w = image_size_w + 2 * pad_w;
 
-    #pragma omp parallel for schedule(static, 2) shared(padded_img, image, image_size_h, image_size_w, padded_h, padded_w, pad_h, pad_w)
+    #pragma omp parallel for schedule(dynamic, 2) shared(padded_img, image, image_size_h, image_size_w, padded_h, padded_w, pad_h, pad_w)
     for (int i = 0; i < padded_h; i++) {
         for (int j = 0; j < padded_w; j++) {
             int src_i = clamp_int(i - pad_h, 0, image_size_h - 1);
