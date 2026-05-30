@@ -1,0 +1,18 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-O3",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "filtro_mpi",
+      "filtro_mpi.c"
+    ],
+    "directory": "/home/zzalfa/Yuri/FiltroGauss/relatorio2",
+    "file": "/home/zzalfa/Yuri/FiltroGauss/relatorio2/filtro_mpi.c",
+    "output": "/home/zzalfa/Yuri/FiltroGauss/relatorio2/filtro_mpi"
+  }
+]
