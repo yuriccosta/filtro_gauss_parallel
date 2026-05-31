@@ -132,6 +132,9 @@ void apply_convolution(double *image, double *output, int img_height, int img_wi
             output[i * img_width + j] = sum;
         }
     } 
+
+
+
 }
 
 
@@ -181,20 +184,46 @@ int main(int argc, char *argv[]) {
     double *image = NULL;
     int image_width = 0, image_height = 0;
 
-    
+    // Variáveis para MPI_Scatterv
+    int *sendcounts = NULL;
+    int *displs = NULL;
+
+
     if (rank == 0) {
         image = read_pgm(input_file, &image_width, &image_height);
-    
-        double start_time = MPI_Wtime();
         
-        image = iterative_gaussian_blur(image, image_height, image_width, kernel_size, iterations);
         
-        double end_time = MPI_Wtime();
-        printf("Tempo de execução: %.6f segundos\n", end_time - start_time);
-        
-        write_pgm(output_file, image, image_width, image_height);
-        free(image); 
+        sendcounts = (int *)malloc(num_procs * sizeof(int));
+        displs = (int *)malloc(num_procs * sizeof(int));
+         
     }
+
+    MPI_Bcast(&image_width, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&image_height, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    int linhas_por_proc = image_height / num_procs;
+    int resto = image_height % num_procs;
+
+    // Para exemplificar e poder construir com base nele
+    MPI_Scatterv(image, const int *sendcounts, const int *displs, 
+                MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                int root, MPI_Comm comm)
+
+
+
+
+
+    
+
+    double start_time = MPI_Wtime();
+        
+    image = iterative_gaussian_blur(image, image_height, image_width, kernel_size, iterations);
+    
+    double end_time = MPI_Wtime();
+    printf("Tempo de execução: %.6f segundos\n", end_time - start_time);
+    
+    write_pgm(output_file, image, image_width, image_height);
+    free(image); 
 
 
     MPI_Finalize();
