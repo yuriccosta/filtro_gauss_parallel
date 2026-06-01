@@ -132,9 +132,6 @@ void apply_convolution(double *image, double *output, int img_height, int img_wi
             output[i * img_width + j] = sum;
         }
     } 
-
-
-
 }
 
 
@@ -184,104 +181,20 @@ int main(int argc, char *argv[]) {
     double *image = NULL;
     int image_width = 0, image_height = 0;
 
-    // Variáveis para MPI_Scatterv
-    int sendcount = NULL;
-    int *displs = NULL;
     
-    double start_time = 0;
 
-    if (rank == 0) {
-        image = read_pgm(input_file, &image_width, &image_height);
+    image = read_pgm(input_file, &image_width, &image_height);
 
-        start_time = MPI_Wtime();
-    }
-
-    MPI_Bcast(&image_width, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&image_height, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    double start_time = MPI_Wtime();
     
-    int linhas_processo = image_height / num_procs;
-    sendcount = linhas_processo * image_width;
-
-    int halo_size = kernel_size / 2;
-
-    int total_linhas = linhas_processo + (2 * halo_size);
-
-    double *recvbuf = (double *) malloc(total_linhas * image_width * sizeof(double));
-
-    int offset = halo_size * image_width;
-
-    MPI_Scatter(image, sendcount, MPI_DOUBLE, recvbuf + offset, sendcount, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-
-    double *kernel = (double *) malloc(kernel_size * kernel_size * sizeof(double));
-    create_gaussian_kernel(kernel_size, 1.0, kernel);
+    image = iterative_gaussian_blur(image, image_height, image_width, kernel_size, iterations);
     
-    double *output = (double *) malloc(total_linhas * image_width * sizeof(double));
-
-
-
-    int halo_elements = halo_size * image_width;
-
-    int rank_cima = rank - 1; //(rank == 0) ? MPI_PROC_NULL : rank - 1;
-    int rank_baixo = rank + 1; //(rank == num_procs - 1) ? MPI_PROC_NULL : rank + 1;
-
-    for (int i = 0; i < iterations; i++) {
-
-        double * halo_topo = recvbuf;
-        double * halo_base = recvbuf + ((linhas_processo + halo_size) * image_width);
-        double * fronteira_topo = recvbuf + (halo_size * image_width); // halo_elements
-        double * fronteira_base = recvbuf + (linhas_processo * image_width);
-
-
-        if (rank > 0){
-             // Envio para o de cima e recebe do de cima
-            MPI_Sendrecv(fronteira_topo, halo_elements, MPI_DOUBLE, rank_cima, 0,
-                    halo_topo, halo_elements, MPI_DOUBLE, rank_cima, 1,
-                    MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
-        
-        if (rank < num_procs - 1){
-            // Envio para o de baixo e recebe do de baixo
-            MPI_Sendrecv(fronteira_base, halo_elements, MPI_DOUBLE, rank_baixo, 1,
-                    halo_base, halo_elements, MPI_DOUBLE, rank_baixo, 0,
-                    MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
-
-        if (rank == 0) {
-            for (int h = 0; h < halo_size; h++) {
-                memcpy(halo_topo + (h * image_width), fronteira_topo, image_width * sizeof(double));
-            }
-        }
-        
-        // Como o último Rank não recebeu fantasma de baixo, preenchemos com a própria linha
-        if (rank == num_procs - 1) {
-            double *ultima_linha_real = halo_base - image_width;
-            for (int h = 0; h < halo_size; h++) {
-                memcpy(halo_base + (h * image_width), ultima_linha_real, image_width * sizeof(double));
-            }
-        }
-        
-
-        apply_convolution(recvbuf, output, total_linhas, image_width, kernel, kernel_size);
-        
-        double *temp = recvbuf;
-        recvbuf = output;
-        output = temp;
-    }
-
-    MPI_Gather(recvbuf + offset, sendcount, MPI_DOUBLE, 
-               image, sendcount, MPI_DOUBLE, 
-               0, MPI_COMM_WORLD);
-
-    if (rank == 0){
-        double end_time = MPI_Wtime();
-        printf("Tempo de execução: %.6f segundos\n", end_time - start_time);
+    double end_time = MPI_Wtime();
+    printf("Tempo de execução: %.6f segundos\n", end_time - start_time);
     
-        write_pgm(output_file, image, image_width, image_height);
-    }
-
-    
+    write_pgm(output_file, image, image_width, image_height);
     free(image); 
+
 
 
     MPI_Finalize();

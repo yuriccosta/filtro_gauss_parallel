@@ -6,17 +6,17 @@ from pathlib import Path
 sns.set_theme(style="whitegrid")
 plt.rcParams.update({'font.size': 11, 'figure.autolayout': True})
 
-df_raw = pd.read_csv('resultados.csv')
+df_raw = pd.read_csv('resultados_exclusivos_mpi.csv')
 
 # 1. Agrupamento incluindo o Kernel
-agrupadores = ['Resolucao', 'Iteracoes', 'Threads', 'Kernel']
+agrupadores = ['Resolucao', 'Iteracoes', 'Processos', 'Kernel']
 df = df_raw.groupby(agrupadores)['Tempo'].mean().reset_index()
 
 # 2. Cálculo de Speedup e Eficiência
-df_t1 = df[df['Threads'] == 1][['Resolucao', 'Iteracoes', 'Kernel', 'Tempo']].rename(columns={'Tempo': 'T1'})
+df_t1 = df[df['Processos'] == 1][['Resolucao', 'Iteracoes', 'Kernel', 'Tempo']].rename(columns={'Tempo': 'T1'})
 df = df.merge(df_t1, on=['Resolucao', 'Iteracoes', 'Kernel'])
 df['Speedup'] = df['T1'] / df['Tempo']
-df['Eficiencia'] = df['Speedup'] / df['Threads']
+df['Eficiencia'] = df['Speedup'] / df['Processos']
 
 saida_csv = Path('graph/resultados_metricas.csv')
 saida_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -26,7 +26,7 @@ print(f"CSV gerado: {saida_csv}")
 
 def gera_grid_completo(dataframe, valor_y, titulo, nome_arquivo, label_y, hline=None, ideal_line=False):
     g = sns.relplot(
-        data=dataframe, x="Threads", y=valor_y, hue="Resolucao", 
+        data=dataframe, x="Processos", y=valor_y, hue="Resolucao", 
         col="Iteracoes", row="Kernel",
         kind="line", marker="o", palette="tab10", height=4, aspect=1.2,
         facet_kws={'sharey': False}, linewidth=2
@@ -35,7 +35,7 @@ def gera_grid_completo(dataframe, valor_y, titulo, nome_arquivo, label_y, hline=
     for ax in g.axes.flat:
         ax.set_xticks([1, 2, 4, 8])
         if ideal_line:
-            threads = sorted(dataframe['Threads'].unique())
+            threads = sorted(dataframe['Processos'].unique())
             ax.plot(threads, threads, color='black', linestyle='--', alpha=0.5, label='Ideal')
         if hline:
             ax.axhline(hline, color='black', linestyle='--', alpha=0.5)
